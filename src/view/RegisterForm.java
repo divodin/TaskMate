@@ -2,281 +2,69 @@ package view;
 
 import dao.UserDAO;
 import model.User;
-
 import javax.swing.*;
 
 public class RegisterForm extends JFrame {
-
-    private JTextField txtNama;
-    private JTextField txtEmail;
-    private JTextField txtUsername;
-
-    private JPasswordField txtPassword;
-    private JPasswordField txtConfirmPassword;
-
-    private JButton btnRegister;
+    private JTextField txtNama, txtEmail, txtUsername;
+    private JPasswordField txtPassword, txtConfirm;
+    private JButton btnRegister, btnBack;
 
     public RegisterForm() {
-
         setTitle("Register TaskMate");
-
-        setSize(450, 400);
-
-        setLocationRelativeTo(null);
-
+        setSize(400, 400);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
+        setLocationRelativeTo(null);
         setLayout(null);
 
-        // Judul
-        JLabel lblTitle =
-                new JLabel("REGISTER TASKMATE");
+        JLabel lblNama = new JLabel("Nama:"); lblNama.setBounds(50, 30, 100, 25); add(lblNama);
+        txtNama = new JTextField(); txtNama.setBounds(160, 30, 180, 25); add(txtNama);
 
-        lblTitle.setBounds(
-                140,
-                20,
-                200,
-                30
-        );
+        JLabel lblEmail = new JLabel("Email:"); lblEmail.setBounds(50, 70, 100, 25); add(lblEmail);
+        txtEmail = new JTextField(); txtEmail.setBounds(160, 70, 180, 25); add(txtEmail);
 
-        add(lblTitle);
+        JLabel lblUser = new JLabel("Username:"); lblUser.setBounds(50, 110, 100, 25); add(lblUser);
+        txtUsername = new JTextField(); txtUsername.setBounds(160, 110, 180, 25); add(txtUsername);
 
-        // Nama
-        JLabel lblNama =
-                new JLabel("Nama Lengkap");
+        JLabel lblPass = new JLabel("Password:"); lblPass.setBounds(50, 150, 100, 25); add(lblPass);
+        txtPassword = new JPasswordField(); txtPassword.setBounds(160, 150, 180, 25); add(txtPassword);
 
-        lblNama.setBounds(
-                50,
-                70,
-                120,
-                25
-        );
+        JLabel lblConf = new JLabel("Konfirmasi:"); lblConf.setBounds(50, 190, 100, 25); add(lblConf);
+        txtConfirm = new JPasswordField(); txtConfirm.setBounds(160, 190, 180, 25); add(txtConfirm);
 
-        add(lblNama);
+        btnBack = new JButton("Back"); btnBack.setBounds(80, 280, 100, 35); add(btnBack);
+        btnRegister = new JButton("Register"); btnRegister.setBounds(200, 280, 120, 35); add(btnRegister);
 
-        txtNama =
-                new JTextField();
-
-        txtNama.setBounds(
-                180,
-                70,
-                180,
-                25
-        );
-
-        add(txtNama);
-
-        // Email
-        JLabel lblEmail =
-                new JLabel("Email");
-
-        lblEmail.setBounds(
-                50,
-                110,
-                120,
-                25
-        );
-
-        add(lblEmail);
-
-        txtEmail =
-                new JTextField();
-
-        txtEmail.setBounds(
-                180,
-                110,
-                180,
-                25
-        );
-
-        add(txtEmail);
-
-        // Username
-        JLabel lblUsername =
-                new JLabel("Username");
-
-        lblUsername.setBounds(
-                50,
-                150,
-                120,
-                25
-        );
-
-        add(lblUsername);
-
-        txtUsername =
-                new JTextField();
-
-        txtUsername.setBounds(
-                180,
-                150,
-                180,
-                25
-        );
-
-        add(txtUsername);
-
-        // Password
-        JLabel lblPassword =
-                new JLabel("Password");
-
-        lblPassword.setBounds(
-                50,
-                190,
-                120,
-                25
-        );
-
-        add(lblPassword);
-
-        txtPassword =
-                new JPasswordField();
-
-        txtPassword.setBounds(
-                180,
-                190,
-                180,
-                25
-        );
-
-        add(txtPassword);
-
-        // Konfirmasi Password
-        JLabel lblConfirmPassword =
-                new JLabel("Konfirmasi Password");
-
-        lblConfirmPassword.setBounds(
-                50,
-                230,
-                120,
-                25
-        );
-
-        add(lblConfirmPassword);
-
-        txtConfirmPassword =
-                new JPasswordField();
-
-        txtConfirmPassword.setBounds(
-                180,
-                230,
-                180,
-                25
-        );
-
-        add(txtConfirmPassword);
-
-        // Tombol Register
-        btnRegister =
-                new JButton("Register");
-
-        btnRegister.setBounds(
-                150,
-                300,
-                120,
-                35
-        );
-
-        add(btnRegister);
-
-        // Event Tombol Register
-        btnRegister.addActionListener(e -> {
-
-            registerUser();
-
+        btnBack.addActionListener(e -> {
+            this.dispose();
+            new LoginForm().setVisible(true);
         });
 
+        btnRegister.addActionListener(e -> prosesDaftar());
         setVisible(true);
     }
 
-    private void registerUser() {
+    private void prosesDaftar() {
+        String p = new String(txtPassword.getPassword());
+        String c = new String(txtConfirm.getPassword());
 
-        String nama =
-                txtNama.getText();
-
-        String email =
-                txtEmail.getText();
-
-        String username =
-                txtUsername.getText();
-
-        String password =
-                String.valueOf(
-                        txtPassword.getPassword()
-                );
-
-        String confirmPassword =
-                String.valueOf(
-                        txtConfirmPassword.getPassword()
-                );
-
-        // Validasi kosong
-        if (nama.isEmpty() ||
-            email.isEmpty() ||
-            username.isEmpty() ||
-            password.isEmpty() ||
-            confirmPassword.isEmpty()) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Semua field wajib diisi!"
-            );
-
+        if (!p.equals(c)) {
+            JOptionPane.showMessageDialog(this, "Password tidak cocok!");
             return;
         }
 
-        // Validasi password minimal 8 karakter
-        if (password.length() < 8) {
+        User u = new User();
+        u.setNama(txtNama.getText());
+        u.setEmail(txtEmail.getText());
+        u.setUsername(txtUsername.getText());
+        u.setPassword(p);
+        u.setRole("USER");
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Password minimal 8 karakter!"
-            );
-
-            return;
-        }
-
-        // Validasi konfirmasi password
-        if (!password.equals(confirmPassword)) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Password dan Konfirmasi Password tidak sama!"
-            );
-
-            return;
-        }
-
-        // Membuat objek User
-        User user = new User();
-
-        user.setNama(nama);
-        user.setEmail(email);
-        user.setUsername(username);
-        user.setPassword(password);
-        user.setRole("USER");
-
-        UserDAO dao =
-                new UserDAO();
-
-        boolean berhasil =
-                dao.insertUser(user);
-
-        if (berhasil) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Registrasi Berhasil!"
-            );
-
-            dispose();
-
+        if (new UserDAO().insertUser(u)) {
+            JOptionPane.showMessageDialog(this, "Berhasil! Silakan Login.");
+            this.dispose();
+            new LoginForm().setVisible(true);
         } else {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Registrasi Gagal!"
-            );
+            JOptionPane.showMessageDialog(this, "Gagal Daftar!");
         }
     }
 }

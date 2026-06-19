@@ -10,38 +10,34 @@ import java.util.ArrayList;
 
 public class UserDAO {
 
-    // Registrasi User
+    /// Registrasi User
     public boolean insertUser(User user) {
 
-        try {
+        String sql = "INSERT INTO users (nama, email, username, password, role) VALUES(?, ?, ?, ?, ?)";
 
-            Connection conn =
-                    Koneksi.getConnection();
-
-            String sql =
-                    "INSERT INTO users " +
-                    "(nama,email,username,password,role) " +
-                    "VALUES(?,?,?,?,?)";
-
-            PreparedStatement ps =
-                    conn.prepareStatement(sql);
+        // Menggunakan try-with-resources agar koneksi dan statement otomatis tertutup
+        try (Connection conn = Koneksi.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, user.getNama());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getUsername());
             ps.setString(4, user.getPassword());
-            ps.setString(5, user.getRole());
+
+            // Validasi Role: Jika dari GUI kosong, otomatis jadikan "USER"
+            String role = (user.getRole() != null && !user.getRole().trim().isEmpty())
+                    ? user.getRole().toUpperCase()
+                    : "USER";
+            ps.setString(5, role);
 
             int result = ps.executeUpdate();
-
             return result > 0;
 
         } catch (Exception e) {
-
-            System.out.println(
-                    "Error Insert User : "
-                    + e.getMessage()
-            );
+            // Mencetak pesan error yang SPESIFIK dari MySQL ke terminal
+            System.out.println("Gagal Registrasi User!");
+            System.out.println("Penyebab Error: " + e.getMessage());
+            // e.printStackTrace(); // Buka komentar baris ini jika ingin melihat detail tumpukan error
         }
 
         return false;

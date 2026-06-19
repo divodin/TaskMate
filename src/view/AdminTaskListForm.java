@@ -1,87 +1,41 @@
-
 package view;
 
 import dao.TaskDAO;
 import model.Task;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.util.ArrayList;
 
-public class AdminTaskListForm extends JFrame {
+public class AdminTaskListForm extends JDialog {
+    private JTable tabelSemuaTugas;
+    private DefaultTableModel tableModel;
+    private TaskDAO taskDAO;
 
-    private JTable table;
-    private DefaultTableModel model;
-    
+    public AdminTaskListForm(JFrame parent) {
+        super(parent, "Pemantauan Seluruh Tugas", true);
+        this.taskDAO = new TaskDAO();
 
-    public AdminTaskListForm() {
+        setSize(700, 450);
+        setLocationRelativeTo(parent);
+        setLayout(new BorderLayout());
 
-        setTitle("Semua Task User");
+        // Setup Tabel (Ada tambahan ID User pemilik tugas)
+        String[] kolom = {"ID Task", "Pemilik (ID User)", "Judul Tugas", "Status", "Deadline"};
+        tableModel = new DefaultTableModel(kolom, 0);
+        tabelSemuaTugas = new JTable(tableModel);
+        add(new JScrollPane(tabelSemuaTugas), BorderLayout.CENTER);
 
-        setSize(900,500);
-
-        setLocationRelativeTo(null);
-
-        setDefaultCloseOperation(
-                JFrame.DISPOSE_ON_CLOSE
-        );
-
-        setLayout(null);
-
-        model =
-                new DefaultTableModel();
-
-        model.addColumn("ID");
-        model.addColumn("User");
-        model.addColumn("Judul");
-        model.addColumn("Deadline");
-        model.addColumn("Prioritas");
-        model.addColumn("Status");
-
-        table =
-                new JTable(model);
-
-        JScrollPane scroll =
-                new JScrollPane(table);
-
-        scroll.setBounds(
-                20,
-                20,
-                840,
-                380
-        );
-
-        add(scroll);
-
-        loadData();
-
-        setVisible(true);
+        muatSemuaTugas();
     }
 
-    private void loadData() {
-
-        model.setRowCount(0);
-
-        TaskDAO dao =
-                new TaskDAO();
-
-        ArrayList<Task> list =
-                dao.getAllTask();
-
-        for(Task task : list){
-
-            model.addRow(
-                    new Object[]{
-
-                            task.getIdTask(),
-                            task.getIdUser(),
-                            task.getJudul(),
-                            task.getDeadline(),
-                            task.getPrioritas(),
-                            task.getStatus()
-
-                    }
-            );
+    private void muatSemuaTugas() {
+        tableModel.setRowCount(0);
+        ArrayList<Task> listTask = taskDAO.getAllTask(); // Poin 35
+        for (Task t : listTask) {
+            tableModel.addRow(new Object[]{
+                    t.getIdTask(), t.getIdUser(), t.getJudul(), t.getStatus(), t.getDeadline()
+            });
         }
     }
 }

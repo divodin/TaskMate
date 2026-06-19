@@ -1,187 +1,138 @@
 package view;
 
 import dao.TaskDAO;
+import model.Task;
 import model.User;
-
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.ArrayList;
 
 public class DashboardUser extends JFrame {
+    private User activeUser;
+    private TaskDAO taskDAO;
+    private JTable tabelTugas;
+    private DefaultTableModel tableModel;
+    private JLabel lblStatistik;
 
-private User user;
+    public DashboardUser(User user) {
+        this.activeUser = user;
+        this.taskDAO = new TaskDAO();
 
-private JLabel lblWelcome;
-private JLabel lblTotalTask;
-private JLabel lblDoneTask;
-private JLabel lblUndoneTask;
+        setTitle("Dashboard User - " + activeUser.getNama());
+        setSize(900, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
 
-private JButton btnTask;
-private JButton btnProfile;
-private JButton btnLogout;
+        // 1. HEADER PANEL
+        JPanel panelHeader = new JPanel(new GridLayout(2, 1));
+        panelHeader.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JLabel lblWelcome = new JLabel("Selamat Datang, " + activeUser.getNama(), SwingConstants.CENTER);
+        lblWelcome.setFont(new Font("Arial", Font.BOLD, 20));
+        lblStatistik = new JLabel("Memuat statistik...", SwingConstants.CENTER);
+        panelHeader.add(lblWelcome);
+        panelHeader.add(lblStatistik);
+        add(panelHeader, BorderLayout.NORTH);
 
-public DashboardUser(User user) {
+        // 2. TABEL DATA
+        String[] kolom = {"ID", "Judul", "Kategori", "Deadline", "Prioritas", "Status"};
+        tableModel = new DefaultTableModel(kolom, 0);
+        tabelTugas = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(tabelTugas);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Daftar Tugas Anda"));
+        add(scrollPane, BorderLayout.CENTER);
 
-    this.user = user;
+        // 3. ACTION PANEL (Bawah) - Menggunakan FlowLayout agar pasti muncul
+        JPanel panelAksi = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
+        panelAksi.setPreferredSize(new Dimension(900, 70));
+        panelAksi.setBorder(BorderFactory.createEtchedBorder());
 
-    setTitle("Dashboard User");
+        JButton btnRefresh = new JButton("Refresh");
+        JButton btnTambah = new JButton("Tambah Tugas");
+        JButton btnEdit = new JButton("Edit Tugas");
+        JButton btnHapus = new JButton("Hapus Tugas");
+        JButton btnLogout = new JButton("Logout");
 
-    setSize(650,450);
+        // Styling Logout agar mencolok
+        btnLogout.setOpaque(true);
+        btnLogout.setBackground(new Color(220, 53, 69));
+        btnLogout.setForeground(Color.WHITE);
 
-    setLocationRelativeTo(null);
+        panelAksi.add(btnRefresh);
+        panelAksi.add(btnTambah);
+        panelAksi.add(btnEdit);
+        panelAksi.add(btnHapus);
+        panelAksi.add(btnLogout);
 
-    setDefaultCloseOperation(
-            JFrame.EXIT_ON_CLOSE
-    );
+        add(panelAksi, BorderLayout.SOUTH);
 
-    setLayout(null);
+        // 4. EVENT LISTENERS
+        btnRefresh.addActionListener(e -> muatData());
 
-    TaskDAO dao =
-            new TaskDAO();
+        btnTambah.addActionListener(e -> {
+            new TaskForm(this, activeUser, null).setVisible(true);
+            muatData();
+        });
 
-    int total =
-            dao.countTaskByUser(
-                    user.getIdUser()
-            );
+        btnEdit.addActionListener(e -> {
+            int baris = tabelTugas.getSelectedRow();
+            if (baris == -1) {
+                JOptionPane.showMessageDialog(this, "Pilih tugas yang ingin diedit!");
+                return;
+            }
+            int idTask = (int) tableModel.getValueAt(baris, 0);
+            Task taskToEdit = new Task();
+            taskToEdit.setIdTask(idTask);
+            new TaskForm(this, activeUser, taskToEdit).setVisible(true);
+            muatData();
+        });
 
-    int done =
-            dao.countDoneTask(
-                    user.getIdUser()
-            );
+        btnHapus.addActionListener(e -> hapusTugas());
 
-    int undone =
-            dao.countUndoneTask(
-                    user.getIdUser()
-            );
+        btnLogout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin keluar?", "Konfirmasi Logout", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                this.dispose();
+                new LoginForm().setVisible(true);
+            }
+        });
 
-    lblWelcome =
-            new JLabel(
-                    "Selamat Datang, "
-                            + user.getNama()
-            );
+        // Eksekusi awal
+        muatData();
+    }
 
-    lblWelcome.setBounds(
-            30,
-            20,
-            300,
-            30
-    );
+    public void muatData() {
+        tableModel.setRowCount(0);
+        ArrayList<Task> listTugas = taskDAO.getTaskByUser(activeUser.getIdUser());
+        for (Task t : listTugas) {
+            tableModel.addRow(new Object[]{
+                    t.getIdTask(), t.getJudul(), t.getIdCategory(),
+                    t.getDeadline(), t.getPrioritas(), t.getStatus()
+            });
+        }
+        updateStatistik();
+    }
 
-    add(lblWelcome);
+    private void updateStatistik() {
+        int total = taskDAO.countTaskByUser(activeUser.getIdUser());
+        int done = taskDAO.countDoneTask(activeUser.getIdUser());
+        lblStatistik.setText("Total Tugas: " + total + " | Selesai: " + done);
+    }
 
-    lblTotalTask =
-            new JLabel(
-                    "Total Task : " + total
-            );
-
-    lblTotalTask.setBounds(
-            30,
-            70,
-            250,
-            25
-    );
-
-    add(lblTotalTask);
-
-    lblDoneTask =
-            new JLabel(
-                    "Task Selesai : " + done
-            );
-
-    lblDoneTask.setBounds(
-            30,
-            100,
-            250,
-            25
-    );
-
-    add(lblDoneTask);
-
-    lblUndoneTask =
-            new JLabel(
-                    "Task Belum Selesai : "
-                            + undone
-            );
-
-    lblUndoneTask.setBounds(
-            30,
-            130,
-            250,
-            25
-    );
-
-    add(lblUndoneTask);
-
-    btnTask =
-            new JButton(
-                    "Kelola Tugas"
-            );
-
-    btnTask.setBounds(
-            30,
-            220,
-            150,
-            40
-    );
-
-    add(btnTask);
-
-    btnProfile =
-            new JButton(
-                    "Profil"
-            );
-
-    btnProfile.setBounds(
-            230,
-            220,
-            150,
-            40
-    );
-
-    add(btnProfile);
-
-    btnLogout =
-            new JButton(
-                    "Logout"
-            );
-
-    btnLogout.setBounds(
-            430,
-            220,
-            150,
-            40
-    );
-
-    add(btnLogout);
-
-    // Kelola Tugas
-    btnTask.addActionListener(e -> {
-
-        new TaskListForm(this.user);
-
-    });
-
-    // Profil
-    btnProfile.addActionListener(e -> {
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Membuka Profil..."
-        );
-
-        new ProfileForm(this.user);
-
-    });
-
-    // Logout
-    btnLogout.addActionListener(e -> {
-
-        new LoginForm();
-
-        dispose();
-
-    });
-
-    setVisible(true);
-}
-
-
+    private void hapusTugas() {
+        int baris = tabelTugas.getSelectedRow();
+        if (baris == -1) {
+            JOptionPane.showMessageDialog(this, "Pilih tugas yang ingin dihapus!");
+            return;
+        }
+        int idTask = (int) tableModel.getValueAt(baris, 0);
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin hapus tugas ini?", "Hapus", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (taskDAO.deleteTask(idTask)) {
+                JOptionPane.showMessageDialog(this, "Tugas berhasil dihapus!");
+                muatData();
+            }
+        }
+    }
 }

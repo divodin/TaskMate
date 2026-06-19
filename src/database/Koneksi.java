@@ -11,26 +11,15 @@ public class Koneksi {
 
         try {
 
-            if (conn == null) {
+            // Tambahkan pengecekan conn.isClosed()
+            if (conn == null || conn.isClosed()) {
+                String url = "jdbc:mysql://localhost:3306/taskmate_db";
+                String user = "ini juga";
+                String password = "sesuaikan dengan password DB kalau kosong biasrkan "; // Sesuaikan passwordmu
 
-                String url =
-                    "jdbc:mysql://localhost:3306/taskmate_db";
-
-                String user = "root";
-
-                String password = "";
-
-                conn = DriverManager.getConnection(
-                    url,
-                    user,
-                    password
-                );
-
-                System.out.println(
-                    "Database Connected"
-                );
+                conn = DriverManager.getConnection(url, user, password);
+                System.out.println("Database Connected");
             }
-
         } catch (Exception e) {
 
             System.out.println(

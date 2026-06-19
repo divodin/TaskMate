@@ -3,427 +3,107 @@ package view;
 import dao.TaskDAO;
 import model.Task;
 import model.User;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 import java.util.ArrayList;
 
 public class TaskListForm extends JFrame {
+    private User user;
+    private JTable table;
+    private DefaultTableModel model;
+    private JTextField txtCari;
+    private JComboBox<String> cmbFilter;
 
-private User user;
+    public TaskListForm(User user) {
+        this.user = user;
 
-private JTable table;
-private DefaultTableModel model;
+        setTitle("Daftar Tugas - " + user.getNama());
+        setSize(950, 600);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
 
-private JButton btnTambah;
-private JButton btnEdit;
-private JButton btnHapus;
-private JButton btnRefresh;
-private JButton btnCari;
+        // --- TOP PANEL (Cari & Filter) ---
+        JPanel panelTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+        txtCari = new JTextField(20);
+        JButton btnCari = new JButton("Cari");
+        cmbFilter = new JComboBox<>(new String[]{"SEMUA", "TO DO", "IN PROGRESS", "DONE"});
+        JButton btnFilter = new JButton("Filter");
 
-private JTextField txtCari;
+        panelTop.add(new JLabel("Cari:"));
+        panelTop.add(txtCari);
+        panelTop.add(btnCari);
+        panelTop.add(new JLabel("Status:"));
+        panelTop.add(cmbFilter);
+        panelTop.add(btnFilter);
+        add(panelTop, BorderLayout.NORTH);
 
-private JComboBox<String> cmbFilter;
-private JButton btnFilter;
+        // --- CENTER PANEL (Tabel) ---
+        model = new DefaultTableModel(new String[]{"ID", "Judul", "Deadline", "Prioritas", "Status"}, 0);
+        table = new JTable(model);
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
-public TaskListForm(User user) {
+        // --- BOTTOM PANEL (Tombol Aksi) ---
+        JPanel panelBawah = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 15));
+        JButton btnTambah = new JButton("Tambah");
+        JButton btnEdit = new JButton("Edit");
+        JButton btnHapus = new JButton("Hapus");
+        JButton btnRefresh = new JButton("Refresh");
+        JButton btnLogout = new JButton("Logout");
 
-    this.user = user;
+        // Styling Logout
+        btnLogout.setBackground(new Color(220, 53, 69));
+        btnLogout.setForeground(Color.WHITE);
+        btnLogout.setOpaque(true);
 
-    setTitle("Daftar Tugas");
+        panelBawah.add(btnTambah);
+        panelBawah.add(btnEdit);
+        panelBawah.add(btnHapus);
+        panelBawah.add(btnRefresh);
+        panelBawah.add(btnLogout);
+        add(panelBawah, BorderLayout.SOUTH);
 
-    setSize(950,550);
-
-    setLocationRelativeTo(null);
-
-    setDefaultCloseOperation(
-            JFrame.DISPOSE_ON_CLOSE
-    );
-
-    setLayout(null);
-
-    txtCari = new JTextField();
-
-    txtCari.setBounds(
-            20,
-            20,
-            250,
-            30
-    );
-
-    add(txtCari);
-
-    btnCari =
-            new JButton("Cari");
-
-    btnCari.setBounds(
-            290,
-            20,
-            100,
-            30
-    );
-
-    add(btnCari);
-
-    cmbFilter =
-            new JComboBox<>();
-
-    cmbFilter.addItem("SEMUA");
-    cmbFilter.addItem("TO DO");
-    cmbFilter.addItem("IN PROGRESS");
-    cmbFilter.addItem("DONE");
-
-    cmbFilter.setBounds(
-            420,
-            20,
-            150,
-            30
-    );
-
-    add(cmbFilter);
-
-    btnFilter =
-            new JButton("Filter");
-
-    btnFilter.setBounds(
-            600,
-            20,
-            100,
-            30
-    );
-
-    add(btnFilter);
-
-    model =
-            new DefaultTableModel();
-
-    model.addColumn("ID");
-    model.addColumn("Judul");
-    model.addColumn("Deadline");
-    model.addColumn("Prioritas");
-    model.addColumn("Status");
-
-    table =
-            new JTable(model);
-
-    JScrollPane scroll =
-            new JScrollPane(table);
-
-    scroll.setBounds(
-            20,
-            70,
-            890,
-            300
-    );
-
-    add(scroll);
-
-    btnTambah =
-            new JButton("Tambah");
-
-    btnTambah.setBounds(
-            30,
-            420,
-            120,
-            35
-    );
-
-    add(btnTambah);
-
-    btnEdit =
-            new JButton("Edit");
-
-    btnEdit.setBounds(
-            180,
-            420,
-            120,
-            35
-    );
-
-    add(btnEdit);
-
-    btnHapus =
-            new JButton("Hapus");
-
-    btnHapus.setBounds(
-            330,
-            420,
-            120,
-            35
-    );
-
-    add(btnHapus);
-
-    btnRefresh =
-            new JButton("Refresh");
-
-    btnRefresh.setBounds(
-            480,
-            420,
-            120,
-            35
-    );
-
-    add(btnRefresh);
-
-    loadData();
-
-    btnTambah.addActionListener(e -> {
-
-        new TaskForm(user);
-
-    });
-
-    btnRefresh.addActionListener(e -> {
-
+        // --- EVENT LISTENERS ---
         loadData();
+        btnTambah.addActionListener(e -> { new TaskForm(this, user, null).setVisible(true); loadData(); });
+        btnEdit.addActionListener(e -> editTask());
+        btnHapus.addActionListener(e -> hapusTask());
+        btnRefresh.addActionListener(e -> loadData());
 
-    });
+        btnLogout.addActionListener(e -> {
+            if (JOptionPane.showConfirmDialog(this, "Yakin ingin keluar?", "Logout", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                this.dispose();
+                new LoginForm().setVisible(true);
+            }
+        });
 
-    btnHapus.addActionListener(e -> {
-
-        hapusTask();
-
-    });
-
-    btnEdit.addActionListener(e -> {
-
-        editTask();
-
-    });
-
-    btnCari.addActionListener(e -> {
-
-        cariTask();
-
-    });
-
-    btnFilter.addActionListener(e -> {
-
-        filterTask();
-
-    });
-
-    setVisible(true);
-}
-
-private void loadData() {
-
-    model.setRowCount(0);
-
-    TaskDAO dao =
-            new TaskDAO();
-
-    ArrayList<Task> list =
-            dao.getTaskByUser(
-                    user.getIdUser()
-            );
-
-    for(Task task : list){
-
-        model.addRow(
-                new Object[]{
-
-                        task.getIdTask(),
-                        task.getJudul(),
-                        task.getDeadline(),
-                        task.getPrioritas(),
-                        task.getStatus()
-
-                }
-        );
+        setVisible(true);
     }
-}
 
-private void cariTask() {
-
-    model.setRowCount(0);
-
-    TaskDAO dao =
-            new TaskDAO();
-
-    ArrayList<Task> list =
-            dao.searchTask(
-                    txtCari.getText()
-            );
-
-    for(Task task : list){
-
-        model.addRow(
-                new Object[]{
-
-                        task.getIdTask(),
-                        task.getJudul(),
-                        task.getDeadline(),
-                        task.getPrioritas(),
-                        task.getStatus()
-
-                }
-        );
+    private void loadData() {
+        model.setRowCount(0);
+        TaskDAO dao = new TaskDAO();
+        for (Task t : dao.getTaskByUser(user.getIdUser())) {
+            model.addRow(new Object[]{t.getIdTask(), t.getJudul(), t.getDeadline(), t.getPrioritas(), t.getStatus()});
+        }
     }
-}
 
-private void filterTask() {
-
-    String status =
-            cmbFilter
-                    .getSelectedItem()
-                    .toString();
-
-    if(status.equals("SEMUA")){
-
+    private void editTask() {
+        int row = table.getSelectedRow();
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Pilih tugas!"); return; }
+        Task t = new Task();
+        t.setIdTask((int) model.getValueAt(row, 0));
+        new TaskForm(this, user, t).setVisible(true);
         loadData();
-
-        return;
     }
 
-    model.setRowCount(0);
-
-    TaskDAO dao =
-            new TaskDAO();
-
-    ArrayList<Task> list =
-            dao.getTaskByStatus(
-                    status
-            );
-
-    for(Task task : list){
-
-        model.addRow(
-                new Object[]{
-
-                        task.getIdTask(),
-                        task.getJudul(),
-                        task.getDeadline(),
-                        task.getPrioritas(),
-                        task.getStatus()
-
-                }
-        );
+    private void hapusTask() {
+        int row = table.getSelectedRow();
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Pilih tugas!"); return; }
+        if (JOptionPane.showConfirmDialog(this, "Yakin hapus?") == JOptionPane.YES_OPTION) {
+            new TaskDAO().deleteTask((int) model.getValueAt(row, 0));
+            loadData();
+        }
     }
-}
-
-private void hapusTask() {
-
-    int row =
-            table.getSelectedRow();
-
-    if(row == -1){
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Pilih task terlebih dahulu"
-        );
-
-        return;
-    }
-
-    int idTask =
-            Integer.parseInt(
-                    model.getValueAt(
-                            row,
-                            0
-                    ).toString()
-            );
-
-    TaskDAO dao =
-            new TaskDAO();
-
-    boolean berhasil =
-            dao.deleteTask(
-                    idTask
-            );
-
-    if(berhasil){
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Task berhasil dihapus"
-        );
-
-        loadData();
-
-    }else{
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Task gagal dihapus"
-        );
-    }
-}
-
-private void editTask() {
-
-    int row =
-            table.getSelectedRow();
-
-    if(row == -1){
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Pilih task terlebih dahulu"
-        );
-
-        return;
-    }
-
-    String judulBaru =
-            JOptionPane.showInputDialog(
-                    this,
-                    "Masukkan Judul Baru"
-            );
-
-    if(judulBaru == null ||
-            judulBaru.isEmpty()){
-
-        return;
-    }
-
-    int idTask =
-            Integer.parseInt(
-                    model.getValueAt(
-                            row,
-                            0
-                    ).toString()
-            );
-
-    Task task =
-            new Task();
-
-    task.setIdTask(idTask);
-    task.setJudul(judulBaru);
-    task.setDeskripsi("");
-    task.setDeadline(
-            java.sql.Date.valueOf(
-                    "2025-12-31"
-            )
-    );
-    task.setPrioritas("SEDANG");
-    task.setStatus("TO DO");
-
-    TaskDAO dao =
-            new TaskDAO();
-
-    boolean berhasil =
-            dao.updateTask(task);
-
-    if(berhasil){
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Task berhasil diupdate"
-        );
-
-        loadData();
-
-    }else{
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Task gagal diupdate"
-        );
-    }
-}
-
-
 }

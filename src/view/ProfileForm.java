@@ -2,169 +2,76 @@ package view;
 
 import dao.UserDAO;
 import model.User;
-
 import javax.swing.*;
+import java.awt.event.ActionEvent;
 
-public class ProfileForm extends JFrame {
-
-    private User user;
-
-    private JTextField txtNama;
-    private JTextField txtEmail;
+public class ProfileForm extends JDialog {
+    private JTextField txtNama, txtEmail;
     private JPasswordField txtPassword;
+    private User activeUser;
+    private UserDAO userDAO;
 
-    private JButton btnSave;
+    public ProfileForm(JFrame parent, User user) {
+        super(parent, "Profil Pengguna", true);
+        this.activeUser = user;
+        this.userDAO = new UserDAO();
 
-    public ProfileForm(User user) {
-
-        this.user = user;
-
-        setTitle("Profile");
-
-        setSize(450,350);
-
-        setLocationRelativeTo(null);
-
-        setDefaultCloseOperation(
-                JFrame.DISPOSE_ON_CLOSE
-        );
-
+        setSize(350, 300);
+        setLocationRelativeTo(parent);
         setLayout(null);
 
-        JLabel lblNama =
-                new JLabel("Nama");
+        JLabel lblUsername = new JLabel("Username: " + activeUser.getUsername());
+        lblUsername.setBounds(20, 20, 300, 25);
+        add(lblUsername); // Username sengaja dibuat label agar tidak bisa diubah (Best Practice)
 
-        lblNama.setBounds(
-                30,
-                30,
-                100,
-                25
-        );
-
+        JLabel lblNama = new JLabel("Nama Lengkap:");
+        lblNama.setBounds(20, 60, 100, 25);
         add(lblNama);
 
-        txtNama =
-                new JTextField(
-                        user.getNama()
-                );
-
-        txtNama.setBounds(
-                140,
-                30,
-                220,
-                25
-        );
-
+        txtNama = new JTextField(activeUser.getNama());
+        txtNama.setBounds(130, 60, 180, 25);
         add(txtNama);
 
-        JLabel lblEmail =
-                new JLabel("Email");
-
-        lblEmail.setBounds(
-                30,
-                80,
-                100,
-                25
-        );
-
+        JLabel lblEmail = new JLabel("Email:");
+        lblEmail.setBounds(20, 100, 100, 25);
         add(lblEmail);
 
-        txtEmail =
-                new JTextField(
-                        user.getEmail()
-                );
-
-        txtEmail.setBounds(
-                140,
-                80,
-                220,
-                25
-        );
-
+        txtEmail = new JTextField(activeUser.getEmail());
+        txtEmail.setBounds(130, 100, 180, 25);
         add(txtEmail);
 
-        JLabel lblPassword =
-                new JLabel("Password");
+        JLabel lblPass = new JLabel("Password Baru:");
+        lblPass.setBounds(20, 140, 100, 25);
+        add(lblPass);
 
-        lblPassword.setBounds(
-                30,
-                130,
-                100,
-                25
-        );
-
-        add(lblPassword);
-
-        txtPassword =
-                new JPasswordField();
-
-        txtPassword.setBounds(
-                140,
-                130,
-                220,
-                25
-        );
-
+        txtPassword = new JPasswordField(activeUser.getPassword());
+        txtPassword.setBounds(130, 140, 180, 25);
         add(txtPassword);
 
-        btnSave =
-                new JButton(
-                        "Simpan"
-                );
+        JButton btnSimpan = new JButton("Simpan Perubahan");
+        btnSimpan.setBounds(80, 200, 160, 35);
+        add(btnSimpan);
 
-        btnSave.setBounds(
-                140,
-                220,
-                120,
-                35
-        );
-
-        add(btnSave);
-
-        btnSave.addActionListener(e -> {
-
-            saveProfile();
-
-        });
-
-        setVisible(true);
+        btnSimpan.addActionListener((ActionEvent e) -> updateProfil());
     }
 
-    private void saveProfile() {
+    private void updateProfil() {
+        if (txtNama.getText().trim().isEmpty() || txtEmail.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nama dan Email tidak boleh kosong!");
+            return;
+        }
 
-        user.setNama(
-                txtNama.getText()
-        );
+        // Set data baru ke objek user saat ini
+        activeUser.setNama(txtNama.getText().trim());
+        activeUser.setEmail(txtEmail.getText().trim());
+        activeUser.setPassword(new String(txtPassword.getPassword()));
 
-        user.setEmail(
-                txtEmail.getText()
-        );
-
-        user.setPassword(
-                String.valueOf(
-                        txtPassword.getPassword()
-                )
-        );
-
-        UserDAO dao =
-                new UserDAO();
-
-        boolean berhasil =
-                dao.updateProfile(user);
-
-        if(berhasil){
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Profil berhasil diupdate"
-            );
-
-        }else{
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Profil gagal diupdate"
-            );
+        // Panggil DAO (Poin 28)
+        if (userDAO.updateProfile(activeUser)) {
+            JOptionPane.showMessageDialog(this, "Profil berhasil diperbarui!");
+            this.dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Gagal memperbarui profil.");
         }
     }
 }

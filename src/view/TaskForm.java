@@ -3,249 +3,137 @@ package view;
 import dao.TaskDAO;
 import model.Task;
 import model.User;
-
+import com.toedter.calendar.JDateChooser; // Import library JCalendar
 import javax.swing.*;
-import java.sql.Date;
+import java.awt.event.ActionEvent;
 
-public class TaskForm extends JFrame {
-
-    private User user;
-
+public class TaskForm extends JDialog {
     private JTextField txtJudul;
     private JTextArea txtDeskripsi;
-    private JTextField txtDeadline;
+    private JComboBox<String> cbPrioritas, cbStatus;
+    private JDateChooser dateChooser;
 
-    private JComboBox<String> cbPrioritas;
-    private JComboBox<String> cbStatus;
+    private Task task;
+    private User user;
+    private TaskDAO taskDAO;
 
-    private JButton btnSimpan;
-
-    public TaskForm(User user) {
-
+    // UBAH 1: Parameter parent diubah menjadi JFrame umum, bukan spesifik DashboardUser
+    public TaskForm(JFrame parent, User user, Task taskToEdit) {
+        // 'true' di sini berarti Modal (mengunci jendela parent sampai form ini ditutup)
+        super(parent, "Form Tugas", true);
         this.user = user;
+        this.task = taskToEdit;
+        this.taskDAO = new TaskDAO();
 
-        setTitle("Tambah Tugas");
-
-        setSize(500,500);
-
-        setLocationRelativeTo(null);
-
-        setDefaultCloseOperation(
-                JFrame.DISPOSE_ON_CLOSE
-        );
-
+        setSize(400, 450);
+        setLocationRelativeTo(parent);
         setLayout(null);
 
-        JLabel lblJudul =
-                new JLabel("Judul");
-
-        lblJudul.setBounds(
-                30,30,100,25
-        );
-
+        JLabel lblJudul = new JLabel("Judul:");
+        lblJudul.setBounds(20, 20, 100, 25);
         add(lblJudul);
 
-        txtJudul =
-                new JTextField();
-
-        txtJudul.setBounds(
-                150,30,250,25
-        );
-
+        txtJudul = new JTextField();
+        txtJudul.setBounds(120, 20, 240, 25);
         add(txtJudul);
 
-        JLabel lblDeskripsi =
-                new JLabel("Deskripsi");
+        JLabel lblDesc = new JLabel("Deskripsi:");
+        lblDesc.setBounds(20, 60, 100, 25);
+        add(lblDesc);
 
-        lblDeskripsi.setBounds(
-                30,80,100,25
-        );
+        txtDeskripsi = new JTextArea();
+        JScrollPane scrollDesc = new JScrollPane(txtDeskripsi);
+        scrollDesc.setBounds(120, 60, 240, 80);
+        add(scrollDesc);
 
-        add(lblDeskripsi);
+        JLabel lblPrio = new JLabel("Prioritas:");
+        lblPrio.setBounds(20, 160, 100, 25);
+        add(lblPrio);
 
-        txtDeskripsi =
-                new JTextArea();
-
-        JScrollPane scroll =
-                new JScrollPane(
-                        txtDeskripsi
-                );
-
-        scroll.setBounds(
-                150,80,250,100
-        );
-
-        add(scroll);
-
-        JLabel lblDeadline =
-                new JLabel(
-                        "Deadline"
-                );
-
-        lblDeadline.setBounds(
-                30,210,100,25
-        );
-
-        add(lblDeadline);
-
-        txtDeadline =
-                new JTextField();
-
-        txtDeadline.setBounds(
-                150,210,250,25
-        );
-
-        add(txtDeadline);
-
-        JLabel lblPrioritas =
-                new JLabel(
-                        "Prioritas"
-                );
-
-        lblPrioritas.setBounds(
-                30,260,100,25
-        );
-
-        add(lblPrioritas);
-
-        cbPrioritas =
-                new JComboBox<>();
-
-        cbPrioritas.addItem(
-                "TINGGI"
-        );
-
-        cbPrioritas.addItem(
-                "SEDANG"
-        );
-
-        cbPrioritas.addItem(
-                "RENDAH"
-        );
-
-        cbPrioritas.setBounds(
-                150,260,250,25
-        );
-
+        String[] prioritas = {"LOW", "MEDIUM", "HIGH"};
+        cbPrioritas = new JComboBox<>(prioritas);
+        cbPrioritas.setBounds(120, 160, 240, 25);
         add(cbPrioritas);
 
-        JLabel lblStatus =
-                new JLabel(
-                        "Status"
-                );
-
-        lblStatus.setBounds(
-                30,310,100,25
-        );
-
+        JLabel lblStatus = new JLabel("Status:");
+        lblStatus.setBounds(20, 200, 100, 25);
         add(lblStatus);
 
-        cbStatus =
-                new JComboBox<>();
-
-        cbStatus.addItem(
-                "TO DO"
-        );
-
-        cbStatus.addItem(
-                "IN PROGRESS"
-        );
-
-        cbStatus.addItem(
-                "DONE"
-        );
-
-        cbStatus.setBounds(
-                150,310,250,25
-        );
-
+        String[] statusArr = {"TODO", "IN PROGRESS", "DONE"};
+        cbStatus = new JComboBox<>(statusArr);
+        cbStatus.setBounds(120, 200, 240, 25);
         add(cbStatus);
 
-        btnSimpan =
-                new JButton(
-                        "Simpan"
-                );
+        JLabel lblDeadline = new JLabel("Deadline:");
+        lblDeadline.setBounds(20, 240, 100, 25);
+        add(lblDeadline);
 
-        btnSimpan.setBounds(
-                180,380,120,40
-        );
+        // Komponen Kalender Visual (JDateChooser)
+        dateChooser = new JDateChooser();
+        dateChooser.setBounds(120, 240, 240, 25);
+        dateChooser.setDateFormatString("yyyy-MM-dd");
+        add(dateChooser);
 
+        JButton btnSimpan = new JButton("Simpan");
+        btnSimpan.setBounds(150, 300, 100, 35);
         add(btnSimpan);
 
-        btnSimpan.addActionListener(
-                e -> simpanTask()
-        );
+        // UBAH 2: Logika Auto-Fill saat form dibuka untuk Edit Data
+        if (this.task != null) {
+            setTitle("Edit Tugas"); // Ubah judul jendela
+            txtJudul.setText(this.task.getJudul());
+            txtDeskripsi.setText(this.task.getDeskripsi());
 
-        setVisible(true);
+            // Mengatur combobox sesuai data yang ada
+            if (this.task.getPrioritas() != null) cbPrioritas.setSelectedItem(this.task.getPrioritas());
+            if (this.task.getStatus() != null) cbStatus.setSelectedItem(this.task.getStatus());
+
+            // Memasukkan tanggal dari database ke JDateChooser
+            if (this.task.getDeadline() != null) {
+                dateChooser.setDate(this.task.getDeadline());
+            }
+        }
+
+        btnSimpan.addActionListener((ActionEvent e) -> simpanTugas());
     }
 
-    private void simpanTask() {
+    private void simpanTugas() {
+        if (txtJudul.getText().trim().isEmpty() || dateChooser.getDate() == null) {
+            JOptionPane.showMessageDialog(this, "Judul dan Deadline wajib diisi!");
+            return;
+        }
 
-        try {
+        // Konversi tipe tanggal Kalender Visual (util.Date) menjadi tipe SQL (sql.Date)
+        java.util.Date tanggalPilih = dateChooser.getDate();
+        java.sql.Date sqlDeadline = new java.sql.Date(tanggalPilih.getTime());
 
-            Task task =
-                    new Task();
+        boolean isUpdate = (task != null);
+        if (!isUpdate) {
+            task = new Task();
+        }
 
-            task.setIdUser(
-                    user.getIdUser()
-            );
+        task.setIdUser(user.getIdUser());
+        task.setIdCategory(1); // Default kategori sementara
+        task.setJudul(txtJudul.getText().trim());
+        task.setDeskripsi(txtDeskripsi.getText().trim());
+        task.setPrioritas(cbPrioritas.getSelectedItem().toString());
+        task.setStatus(cbStatus.getSelectedItem().toString());
+        task.setDeadline(sqlDeadline);
 
-            // sementara kategori default
-            task.setIdCategory(1);
+        boolean sukses;
+        if (isUpdate) {
+            sukses = taskDAO.updateTask(task);
+        } else {
+            sukses = taskDAO.addTask(task);
+        }
 
-            task.setJudul(
-                    txtJudul.getText()
-            );
-
-            task.setDeskripsi(
-                    txtDeskripsi.getText()
-            );
-
-            task.setDeadline(
-                    Date.valueOf(
-                            txtDeadline.getText()
-                    )
-            );
-
-            task.setPrioritas(
-                    cbPrioritas
-                            .getSelectedItem()
-                            .toString()
-            );
-
-            task.setStatus(
-                    cbStatus
-                            .getSelectedItem()
-                            .toString()
-            );
-
-            TaskDAO dao =
-                    new TaskDAO();
-
-            boolean berhasil =
-                    dao.addTask(task);
-
-            if(berhasil){
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Task berhasil disimpan"
-                );
-
-            }else{
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Task gagal disimpan"
-                );
-            }
-
-        } catch(Exception e){
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    e.getMessage()
-            );
+        if (sukses) {
+            JOptionPane.showMessageDialog(this, "Tugas berhasil disimpan!");
+            // UBAH 3: Tidak perlu memanggil muatData() parent di sini.
+            // Karena form ini JDialog modal, saat di-dispose, parent otomatis jalan lagi.
+            this.dispose(); // Tutup form
+        } else {
+            JOptionPane.showMessageDialog(this, "Gagal menyimpan tugas.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
