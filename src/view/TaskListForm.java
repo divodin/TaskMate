@@ -69,7 +69,15 @@ public class TaskListForm extends JFrame {
         btnTambah.addActionListener(e -> { new TaskForm(this, user, null).setVisible(true); loadData(); });
         btnEdit.addActionListener(e -> editTask());
         btnHapus.addActionListener(e -> hapusTask());
-        btnRefresh.addActionListener(e -> loadData());
+        btnRefresh.addActionListener(e -> {
+            txtCari.setText("");
+            cmbFilter.setSelectedIndex(0);
+            loadData();
+        });
+
+        // FIX: Sudah ditambahkan tanda kurung () dan diperbaiki panggilannya
+        btnCari.addActionListener(e -> cariData());
+        btnFilter.addActionListener(e -> filterData());
 
         btnLogout.addActionListener(e -> {
             if (JOptionPane.showConfirmDialog(this, "Yakin ingin keluar?", "Logout", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
@@ -86,6 +94,32 @@ public class TaskListForm extends JFrame {
         TaskDAO dao = new TaskDAO();
         for (Task t : dao.getTaskByUser(user.getIdUser())) {
             model.addRow(new Object[]{t.getIdTask(), t.getJudul(), t.getDeadline(), t.getPrioritas(), t.getStatus()});
+        }
+    }
+
+    // --- BARU: Method untuk menjalankan pencarian kata kunci judul ---
+    private void cariData() {
+        String keyword = txtCari.getText().trim().toLowerCase();
+        model.setRowCount(0);
+        TaskDAO dao = new TaskDAO();
+
+        for (Task t : dao.getTaskByUser(user.getIdUser())) {
+            if (t.getJudul().toLowerCase().contains(keyword) || keyword.isEmpty()) {
+                model.addRow(new Object[]{t.getIdTask(), t.getJudul(), t.getDeadline(), t.getPrioritas(), t.getStatus()});
+            }
+        }
+    }
+
+    // --- BARU: Method untuk menjalankan filter berdasarkan status ---
+    private void filterData() {
+        String statusDipilih = cmbFilter.getSelectedItem().toString();
+        model.setRowCount(0);
+        TaskDAO dao = new TaskDAO();
+
+        for (Task t : dao.getTaskByUser(user.getIdUser())) {
+            if (statusDipilih.equals("SEMUA") || t.getStatus().equalsIgnoreCase(statusDipilih)) {
+                model.addRow(new Object[]{t.getIdTask(), t.getJudul(), t.getDeadline(), t.getPrioritas(), t.getStatus()});
+            }
         }
     }
 

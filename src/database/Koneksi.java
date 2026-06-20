@@ -14,8 +14,8 @@ public class Koneksi {
             // Tambahkan pengecekan conn.isClosed()
             if (conn == null || conn.isClosed()) {
                 String url = "jdbc:mysql://localhost:3306/taskmate_db";
-                String user = "ini juga";
-                String password = "sesuaikan dengan password DB kalau kosong biasrkan "; // Sesuaikan passwordmu
+                String user = "root";
+                String password = "rizal2404"; // Sesuaikan passwordmu
 
                 conn = DriverManager.getConnection(url, user, password);
                 System.out.println("Database Connected");
